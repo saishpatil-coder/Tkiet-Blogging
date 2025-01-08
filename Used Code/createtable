@@ -1,0 +1,40 @@
+-- // Function to create tables in PostgreSQL
+-- const createTables = async () => {
+--   try {
+--     // SQL query to create the 'Users' table
+--     const userTableQuery = `
+-- CREATE TABLE IF NOT EXISTS Users (
+--   id SERIAL PRIMARY KEY,
+--   username VARCHAR(255) NOT NULL,
+--   email VARCHAR(255) UNIQUE NOT NULL,
+--   password VARCHAR(255) NOT NULL,  -- Store the hashed password
+--   nickname VARCHAR(255) UNIQUE NOT NULL,  -- New unique nickname column
+--   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
+
+--     `;
+
+--     // SQL query to create the 'Blogs' table
+--     const blogTableQuery = `
+--       CREATE TABLE IF NOT EXISTS Blogs (
+--         id SERIAL PRIMARY KEY,
+--         title VARCHAR(255) NOT NULL,
+--         content TEXT NOT NULL,
+--         user_id INT NOT NULL,
+--         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--         FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+--       );
+--     `;
+
+--     // Run the SQL queries to create the tables
+--     await pool.query(userTableQuery);
+--     await pool.query(blogTableQuery);
+
+--     console.log("Tables created successfully!");
+--   } catch (err) {
+--     console.error("Error creating tables:", err.message);
+--   }
+-- };
+
+-- // Call the function to create the tables
+-- createTables();
