@@ -33,7 +33,7 @@ postRouter.get("/", async (req, res) => {
 
   try {
     const query = `
-        SELECT * FROM posts
+        SELECT * FROM Blogs
         ORDER BY created_at DESC
         LIMIT $1 OFFSET $2;
       `;
