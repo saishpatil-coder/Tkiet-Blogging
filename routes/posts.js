@@ -2,6 +2,7 @@ import express from "express";
 import pool from "../db.js"; // Import your database connection
 import authenticateJWT from "../middlewares/authJWT.js";
 const postRouter = express.Router();
+import jwt from "jsonwebtoken";
 
 // Get all Blogs
 // Middleware to check if the user owns the post
@@ -26,20 +27,57 @@ const verifyPostOwner = async (req, res, next) => {
 };
 
 // Use this middleware for update and delete routes
-
 postRouter.get("/", async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const offset = (page - 1) * limit;
+  let userId = null; // Set to null instead of an empty string for clarity
+  const token = req.cookies.authToken; // Get token from 'Authorization' header
 
+  // If no token exists, userId remains null
+  if (!token) {
+    console.log("No token provided");
+    userId = null;
+  }
+
+  // Decode JWT token to get userId
   try {
+    if (token) {
+      // Asynchronously verify the token
+      const decoded = await jwt.verify(token, "your_jwt_secret_key");
+      userId = decoded.userId; // Get userId from decoded token
+      console.log("Decoded token:", decoded);
+    }
+  } catch (error) {
+    console.log("JWT verification error:", error);
+    userId = null; // In case of error, userId remains null
+  }
+  try {
+    // Query to fetch blogs and check if the user has liked them
     const query = `
-        SELECT * FROM Blogs
-        ORDER BY created_at DESC
-        LIMIT $1 OFFSET $2;
-      `;
-    const result = await pool.query(query, [limit, offset]);
+      SELECT 
+        blogs.id, 
+        blogs.title, 
+        blogs.content,
+        blogs.author,
+        blogs.created_at,
+        blogs.user_id,
+        blogs.tags,
+        CASE 
+          WHEN likes.user_id IS NOT NULL THEN TRUE
+          ELSE FALSE
+        END AS has_liked
+      FROM blogs
+      LEFT JOIN likes ON blogs.id = likes.post_id AND likes.user_id = $1
+      ORDER BY blogs.created_at DESC
+      LIMIT $2 OFFSET $3;
+    `;
+
+    // Execute query with userId (for checking likes) and pagination
+    const result = await pool.query(query, [userId, limit, offset]);
+    console.log(result.rows);
     res.status(200).json(result.rows);
   } catch (error) {
+    console.log("Error fetching posts:", error);
     res.status(500).json({ error: "Error fetching paginated posts" });
   }
 });
@@ -59,23 +97,32 @@ postRouter.get("/:id", async (req, res) => {
 });
 
 // Create a new post
-postRouter.post("/", authenticateJWT, async (req, res) => {
-  const { title, content } = req.body;
+postRouter.post("/newPost", authenticateJWT, async (req, res) => {
+  let { title, content, author, tags } = req.body;
   const userId = req.user.userId;
 
   try {
+    tags = tags ? (tags.trim() ? tags.split(",") : null) : null;
     const query = `
-      INSERT INTO Blogs (title, content, user_id)
-      VALUES ($1, $2, $3) RETURNING *;
+      INSERT INTO Blogs (title, content, user_id,author,tags)
+      VALUES ($1, $2, $3 , $4,$5) RETURNING *;
     `;
-    const result = await pool.query(query, [title, content, userId]);
+    const result = await pool.query(query, [
+      title,
+      content,
+      userId,
+      author,
+      tags,
+    ]);
     res
       .status(201)
       .json({ message: "Post created successfully", post: result.rows[0] });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Error creating post" });
   }
 });
+
 postRouter.get("/search", async (req, res) => {
   const { q } = req.query;
 

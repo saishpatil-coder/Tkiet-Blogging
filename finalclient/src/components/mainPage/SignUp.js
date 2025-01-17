@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const SignUp = () => {
   let navigate = useNavigate("");
@@ -8,7 +9,10 @@ const SignUp = () => {
     email: "",
     password: "",
     nickname: "",
+    gender: "",
   });
+  const { setAuthState } = useAuth();
+
   const [responseMessage, setResponseMessage] = useState("");
   const [formErrors, setFormErrors] = useState({});
 
@@ -31,6 +35,7 @@ const SignUp = () => {
       errors.password = "Password must be at least 6 characters long.";
     }
     if (!formData.nickname) errors.nickname = "Nickname is required.";
+    if (!formData.gender) errors.gender = "Gender is required.";
     return errors;
   };
 
@@ -40,8 +45,6 @@ const SignUp = () => {
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
     } else {
-      // alert("Registration Successful!");
-
       try {
         const response = await fetch(
           "http://localhost:3003/api/auth/register",
@@ -51,13 +54,24 @@ const SignUp = () => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(formData),
+            credentials: "include",
           }
         );
 
         const result = await response.json();
         if (response.ok) {
+          setAuthState({
+            isLoggedIn: true,
+            user: result.username, // Assuming the login API returns the username
+          });
           setResponseMessage("Registration successful!");
-          setFormData({ username: "", email: "", password: "", nickname: "" });
+          setFormData({
+            username: "",
+            email: "",
+            password: "",
+            nickname: "",
+            gender: "",
+          });
           navigate("/");
         } else {
           setResponseMessage(result.message || "Registration failed.");
@@ -68,7 +82,13 @@ const SignUp = () => {
       }
 
       console.log("Form Data Submitted:", formData);
-      setFormData({ username: "", email: "", password: "", nickname: "" });
+      setFormData({
+        username: "",
+        email: "",
+        password: "",
+        nickname: "",
+        gender: "",
+      });
       setFormErrors({});
     }
   };
@@ -153,6 +173,28 @@ const SignUp = () => {
             />
             {formErrors.nickname && (
               <div className="invalid-feedback">{formErrors.nickname}</div>
+            )}
+          </div>
+          <div className="mb-3">
+            <label htmlFor="gender" className="form-label">
+              Gender
+            </label>
+            <select
+              className={`form-control ${
+                formErrors.gender ? "is-invalid" : ""
+              }`}
+              id="gender"
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+            >
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+            {formErrors.gender && (
+              <div className="invalid-feedback">{formErrors.gender}</div>
             )}
           </div>
           <button type="submit" className="btn btn-primary w-100">

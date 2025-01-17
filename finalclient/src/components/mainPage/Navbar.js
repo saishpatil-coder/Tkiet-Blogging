@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 function Navbar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
+  // const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { authState, setAuthState, checkLoggedIn } = useAuth();
+  const { isLoggedIn, user } = authState;
   const toggleNavbar = () => {
     setIsCollapsed(!isCollapsed);
   };
@@ -17,7 +19,10 @@ function Navbar() {
       });
 
       if (response.ok) {
-        setIsLoggedIn(false); // Update state to reflect logout
+        setAuthState({
+          isLoggedIn: false,
+          user: null,
+        }); // Update state to reflect logout
       } else {
         console.error("Logout failed");
       }
@@ -27,32 +32,8 @@ function Navbar() {
   };
 
   useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:3003/api/auth/isloggedin",
-          {
-            method: "GET",
-            credentials: "include", // Include cookies with the request
-          }
-        );
-
-        const data = await response.json();
-        console.log(data);
-        if (data.isLoggedIn) {
-          console.log("success login req");
-          setIsLoggedIn(true); // Update login state based on server response
-        } else {
-          console.log("not success");
-          setIsLoggedIn(false);
-        }
-      } catch (err) {
-        console.error("Error during login status check:", err);
-        setIsLoggedIn(false); // If request fails, assume not logged in
-      }
-    };
-
-    checkLoginStatus(); // Check login status when component mounts
+    checkLoggedIn();
+    // Check login status when component mounts
   }, []); // Empty dependency array ensures this runs only on mount
 
   return (
@@ -99,12 +80,17 @@ function Navbar() {
           <div className="d-flex align-items-center">
             {/* Conditional Buttons */}
             {isLoggedIn ? (
-              <button
-                className="btn btn-outline-danger me-3"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
+              <>
+                <a className="navbar-brand fs-5" href="#">
+                  {user}
+                </a>
+                <button
+                  className="btn btn-outline-danger me-3"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <>
                 <Link to="/login">

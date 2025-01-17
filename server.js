@@ -21,17 +21,6 @@ app.use(cookieParser()); // Fix for cookie parser
 app.use(express.json());
 app.use("/api/auth", router);
 app.use("/posts", postRouter);
-app.get("/posts", async (req, res) => {
-  try {
-    // const result = await pool.query(
-    //   "SELECT * FROM posts ORDER BY created_at DESC"
-    // );
-    const result = await pool.query("SELECT * FROM Blogs");
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(500).json({ error: "Error fetching posts" });
-  }
-});
 
 const PORT = 3003;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

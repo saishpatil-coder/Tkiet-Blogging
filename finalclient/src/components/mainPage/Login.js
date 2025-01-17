@@ -1,5 +1,6 @@
 import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 function Login() {
   const [loginData, setLoginData] = useState({
@@ -8,7 +9,8 @@ function Login() {
   });
   const [formErrors, setFormErrors] = useState({});
   const [responseMessage, setResponseMessage] = useState("");
-  let nevigate = useNavigate();
+  let navigate = useNavigate();
+  const { setAuthState } = useAuth();
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -42,9 +44,11 @@ function Login() {
     setResponseMessage(""); // Clear previous responses
 
     // Placeholder for API call
+    const API_BASE_URL =
+      process.env.REACT_APP_API_BASE_URL || "http://localhost:3003";
+
     try {
-      // Replace with your login API endpoint
-      const response = await fetch("http://localhost:3003/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -53,11 +57,21 @@ function Login() {
         credentials: "include",
       });
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        result = { message: "Unexpected response format." };
+      }
+
       if (response.ok) {
         setResponseMessage("Login successful!");
-        nevigate("/");
-        console.log(result);
+        setAuthState({
+          isLoggedIn: true,
+          user: result.username, // Assuming the login API returns the username
+        });
+        navigate("/"); // Navigate to the homepage or dashboard
+        console.log(result); // Log the server response
       } else {
         setResponseMessage(result.message || "Login failed. Please try again.");
       }
